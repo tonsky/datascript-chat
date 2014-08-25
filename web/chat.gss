@@ -1,0 +1,23 @@
+#window[height] == ::window[height] - 40;
+#window[center-x] == ::window[center-x];
+#window[center-y] == ::window[center-y];
+
+#rooms[left] == #window[left];
+#rooms[width] == 310;
+
+#chat[width] == 510;
+#chat[left]   == #rooms[right];
+#chat[right]  == #window[right];
+#chat[top]    == #window[top];
+#chat[bottom] == #compose[top];
+
+
+#chat__header[top] == #window[top];
+#chat__header[left] == #chat[left];
+#chat__header[width] == #chat[width];
+
+
+#compose[right] == #window[right];
+#compose[left] == #chat[left];
+#compose[bottom] == #window[bottom];
+#compose[height] == 100;
