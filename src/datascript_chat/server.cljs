@@ -73,7 +73,7 @@
 (def conn (d/create-conn {:room/messages {:db/cardinality :db.cardinality/many}}))
 (d/transact! conn fixtures)
 
-(doseq [[id url] (d/q '[:find ?id ?src :where [?id :room/source ?src]] @conn)]
+(doseq [[id url] (u/-q '[:find ?id ?src :where [?id :room/source ?src]] @conn)]
   (ajax url
     (fn [msgs]
       (d/transact! conn [ {:db/id id
@@ -86,15 +86,8 @@
           :where [?id :user/name]]
         db))
 
-(defn- rand-room-id [db]
-  (u/q1 '[:find  (rand ?rid)
-          :where [?rid  :room/title]] db))
-  
-(defn- rand-message [db rid]
-  (u/q1 '[:find  (rand ?m)
-          :in    $ ?rid
-          :where [?rid :room/messages ?m]]
-      db rid))
+(defn- rand-message [db]
+  (-> (d/datoms db :aevt :room/messages) (rand-nth) ((juxt :e :v))))
 
 ;; "REST" API
 
@@ -102,7 +95,7 @@
 
 (defn get-rooms []
   (->> @conn
-    (d/q '[:find ?id ?title
+    (u/-q '[:find ?id ?title
            :where [?id :room/title ?title]])
     (mapv #(zipmap [:db/id :room/title] %))))
 
@@ -133,8 +126,7 @@
 (go-loop []
   (<! (async/timeout (rand-n 500 1500)))
   (let [db @conn
-        room-id   (rand-room-id db)
-        text      (rand-message db room-id)
+        [room-id text] (rand-message db)
         author-id (rand-pred #(not= % @me) #(rand-user-id db))
         msg     { :db/id             (swap! next-msg-id inc)
                   :message/text      text

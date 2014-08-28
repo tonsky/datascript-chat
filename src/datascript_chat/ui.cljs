@@ -4,8 +4,8 @@
     [cljs.core.async :as async]
     [datascript :as d]
     [datascript-chat.util :as u]
-    [quiescent :as q :include-macros true]
-    [sablono.core :as html :refer-macros [html]] 
+    [datascript-chat.react :as r :include-macros true]
+    [sablono.core :as s]
     [goog.string]
     [goog.string.format] ))
 
@@ -30,14 +30,12 @@
 ;;       (+ 65536)
 ;;       (.toString 16))))
 
-;; (let [s "kidney 🐶💕 abc"
+;; (let [s "abc 🐶💕 def"
 ;;       re #"[\uD800-\uDBFF][\uDC00-\uDFFF]"]
 ;;   (str/replace s re #(str "https://abs.twimg.com/emoji/v1/72x72/" (chars->utf32 %) ".png")))
 
 
 ;; UTILS
-
-(def conn (atom nil))
 
 (defn- format-time [date]
   (goog.string/format "%02d:%02d" (.getHours date) (.getMinutes date)))
@@ -46,24 +44,6 @@
   (<= 
     (- (.-scrollHeight node) (.-scrollTop node) (.-offsetHeight node))
     0))
-
-(defn node []
-  (.getDOMNode q/*component*))
-
-(defn remember [k v]
-  (aset q/*component* (str k) v))
-
-(defn recall [k]
-  (aget q/*component* (str k)))
-
-(defn- stick-to-bottom [component]
-  (q/wrapper component
-    :onWillUpdate (fn []
-                    (remember "data-sticky" (should-scroll? (node))))
-    :onUpdate     (fn [node]
-                    (when (recall "data-sticky")
-                      (set! (.-scrollTop node) (.-scrollHeight node))))))
-
 
 ;; COMMUNICATION
 
@@ -76,12 +56,26 @@
 
 ;; UI COMPONENTS
 
-(q/defcomponent Room [[room user last-msg unread] event-bus]
-  (html
-    [:.topic {:class (when (:room/selected room) "topic_selected")
-                 :on-click (fn [_]
-                             (select-room event-bus (:db/id room))
-                             (.focus (.getElementById js/document "compose__area")))}
+(r/defc avatar [user]
+  [:.message__avatar
+    [:img {:src (:user/avatar user "avatars/loading.jpg")}]])
+
+(r/defc room [room last-msg unread event-bus]
+  (let [
+;;         last-msg (u/qe '[:find  (max ?m)
+;;                          :in    $ ?r
+;;                          :where [?m :message/room ?r]]
+;;                        db (:db/id room))
+;;         unread   (u/q1 '[:find (count ?m)
+;;                          :in   $ ?r
+;;                          :where [?m :message/room ?r]
+;;                                 [?m :message/unread]]
+;;                         db (:db/id room))
+        user     (:message/author last-msg)]
+    [:.topic { :class    (when (:room/selected room) "topic_selected")
+               :on-click (fn [_]
+                           (select-room event-bus (:db/id room))
+                           (.focus (.getElementById js/document "compose__area")))}
       (if last-msg
         (list
           [:img.topic__avatar {:src (:user/avatar user)}]
@@ -96,69 +90,55 @@
             ])
         [:.topic__title (:room/title room)])]))
 
-(q/defcomponent Avatar [user]
-;;   (q/wrapper
-    (html
-      [:.message__avatar
-        [:img {:src (:user/avatar user "avatars/loading.jpg")}]])
-;;     :onMount       (fn [node]
-;;                      (let [cmp q/*component*
-;;                            key (d/listen! @conn #(.forceUpdate cmp))]
-;;                        (remember "data-listen-key" key)))
-;;     :onWillUnmount (fn []
-;;                      (d/unlisten! @conn (recall "data-listen-key"))))
-  )
-
-(q/defcomponent RoomsPane [db event-bus]
-  (let [rooms         (map u/entity->map (u/qes-by db :room/title))
-        last-msgs     (->> (d/q '[:find  ?r (max ?m)
-                                  :where [?m :message/room ?r]]
+(r/defc rooms-pane [db event-bus]
+  (let [rooms         (->> (u/qes-by db :room/title)
+                           (sort-by :room/title))
+        last-msgs     (u/qmap '[:find  ?r (max ?m)
+                                :where [?m :message/room ?r]]
                                 db)
-                           (map (fn [[rid msgid]] [rid (d/entity db msgid)]))
-                           (into {}))
-        unread-counts (->> (d/q '[:find ?r (count ?m)
-                                  :where [?m :message/unread]
-                                         [?m :message/room ?r]]
-                                db)
-                           (into {}))]
-    (html
-      [:#rooms__pane.pane
-        [:#rooms__header.header
-          [:.title "Rooms"]]
-        (map #(let [rid      (:db/id %)
-                    last-msg (get last-msgs rid)]
-                (Room [%
-                       (u/entity->map (:message/author last-msg))
-                       last-msg
-                       (get unread-counts rid)]
-                      event-bus))
-             (sort-by :room/title rooms))])))
+        unread-counts (u/qmap '[:find ?r (count ?m)
+                                :where [?m :message/unread]
+                                       [?m :message/room ?r]]
+                                db)]
+    [:#rooms__pane.pane
+      [:#rooms__header.header
+        [:.title "Rooms"]]
+      (map #(let [rid (:db/id %)]
+              (room %
+                    (when-let [mid (get last-msgs rid)]
+                      (d/entity db mid))
+                    (get unread-counts rid)
+                    event-bus))
+           rooms)]))
 
-(q/defcomponent Text [text]
-  (html
-    [:.message__text
-      (map #(vector :p %) (str/split-lines text))]))
+(r/defc text [text]
+  [:.message__text
+    (map #(vector :p %) (str/split-lines text))])
 
-(q/defcomponent Message [[msg user]]
-  (html
+(r/defc message [msg]
+  (let [user (:message/author msg)]
     [:.message {:class [(when (:message/unread msg) "message_unread")
                         (when (:user/me user)       "me")]}
-      (Avatar user)
+      (avatar user)
       [:.message__name
         (:user/name user)
         [:span.message__ts
           (format-time (:message/timestamp msg))]]
-      (Text (:message/text msg))]))
+      (text (:message/text msg))]))
      
-(q/defcomponent ChatPane [[room messages _]]
-  (stick-to-bottom
-    (html
-      [:#chat__pane.pane
-        [:#chat__header.header
-          [:.title (:room/title room "Loading...")]]
-        (let [msgs (sort-by :message/timestamp messages)]
-          (map #(Message [% (u/entity->map (:message/author %))])
-               msgs))])))
+(r/defc chat-pane [db]
+  (let [room (u/qe-by db :room/selected true)
+        msgs (->> (u/qes-by db :message/room (:db/id room))
+                  (sort-by :message/timestamp))]
+    [:#chat__pane.pane
+      [:#chat__header.header
+        [:.title (:room/title room "Loading...")]]
+        (map message msgs)])
+  :will-update (fn [node]
+                 (r/remember :sticky? (should-scroll? node)))
+  :did-update  (fn [node]
+                 (when (r/recall :sticky?)
+                   (set! (.-scrollTop node) (.-scrollHeight node)))))
 
 (defn- textarea-keydown [callback]
   (fn [e]
@@ -169,25 +149,21 @@
         (set! (.. e -target -value) "")
         (.preventDefault e)))))
 
-(q/defcomponent ComposePane [user event-bus]
-  (html
-    [:#compose
-      (Avatar user)
-      [:textarea#compose__area.message__text
-        { :placeholder "Reply..."
-          :auto-focus  true
-          :on-key-down  (textarea-keydown #(send-msg event-bus %)) }]]))
+(r/defc compose-pane [db event-bus]
+  [:#compose
+    (avatar (u/qe-by db :user/me true))
+    [:textarea#compose__area.message__text
+      { :placeholder "Reply..."
+        :auto-focus  true
+        :on-key-down  (textarea-keydown #(send-msg event-bus %)) }]])
 
-(q/defcomponent Window [db event-bus]
-  (let [selected (u/qe-by  db :room/selected true)
-        messages (u/qes-by db :message/room (:db/id selected))
-        me       (u/qe-by  db :user/me true)
-        users    (->> (u/qes-by db :user/name) (u/map-by-to :db/id :system/state))]
-    (html
-      [:#window
-        [:#rooms (RoomsPane db event-bus)]
-        [:#chat  (ChatPane [selected messages users])]
-        (ComposePane me event-bus)])))
+(r/defc window [db event-bus]
+  [:#window
+    [:#rooms (rooms-pane db event-bus)]
+    [:#chat  (chat-pane db)]
+    (compose-pane db event-bus)])
+
+
 
 (def render-queue (atom nil))
 
@@ -197,7 +173,7 @@
 (defn- -render [db event-bus]
   (let [key (str "Render (" (count (:eavt db)) " datoms)")]
     (.time js/console key)
-    (q/render (Window db event-bus) (.-body js/document))
+    (r/render (window db event-bus) (.-body js/document))
     (.timeEnd js/console key)))
 
 (defn- render []
