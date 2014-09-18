@@ -45,7 +45,7 @@
           [:img.topic__avatar {:src (:user/avatar user)}]
           [:.topic__title (:room/title room)
             (when (pos? unread)
-              [:span.topic__unread (str unread)])]
+              [:span.topic__unread (str unread (when (>= unread 30) "+"))])]
           [:.topic__msg (:message/text last-msg)]
           [:.topic__ts
             (:user/name user)
@@ -81,7 +81,8 @@
 
 (r/defc message [msg]
   (let [user (:message/author msg)]
-    [:.message {:class [(when (:message/unread msg) "message_unread")
+    [:.message {:key   (:db/id msg)
+                :class [(when (:message/unread msg) "message_unread")
                         (when (:user/me user)       "me")]}
       (avatar user)
       [:.message__name

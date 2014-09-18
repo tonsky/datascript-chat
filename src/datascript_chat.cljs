@@ -12,6 +12,8 @@
 
 (enable-console-print!)
 
+(def ^:dynamic *room-msg-limit* 30)
+
 ;; DATABASE
 
 ;; schema is required only for :db.type/ref and :db.cardinality/many
@@ -139,3 +141,25 @@
   ]))
 
 
+;; Clean-up: keeping last N messages per room
+(go-loop-sub event-bus-pub :recv-msg [_ msg]
+  (let [db @conn
+        room-id     (:message/room msg)
+        ;; Last ?lim messages
+        keep-msgs   (->> (u/q1 '[:find (max ?lim ?m)
+                                 :in $ ?room-id ?lim
+                                 :where [?m :message/room ?room-id]]
+                               db
+                               room-id
+                               *room-msg-limit*)
+                         set)
+        ;; All other messages in same room
+        remove-msgs (u/q1s '[:find ?m
+                             :in $ ?room-id ?remove-pred 
+                             :where [?m :message/room ?room-id]
+                                    [(?remove-pred ?m)]] ;; filter by custom predicate
+                             db
+                             room-id
+                             #(not (contains? keep-msgs %)))]
+    (d/transact! conn
+      (map #(vector :db.fn/retractEntity %) remove-msgs))))

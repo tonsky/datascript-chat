@@ -4,5 +4,6 @@ What DataScript-driven application looks like? Does DataScript really makes the 
 
 <img src="http://tonsky.me/blog/datascript-chat/datascript_chat.png" style="width: 620px; height: 420px;" />
 
-Code walkthrough http://tonsky.me/blog/datascript-chat/
-Live version http://tonsky.me/datascript-chat/
+Code walkthrough http://tonsky.me/blog/datascript-chat/  
+
+Live version http://tonsky.me/datascript-chat/  
