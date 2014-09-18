@@ -12,37 +12,37 @@
 (enable-console-print!)
 
 (def fixtures [
-  {:room/title "World domination"     :room/source "rooms/world_domination.edn"}
-  {:room/title "Pussies"              :room/source "rooms/pussies.edn"}
-  {:room/title "Internet of cats"     :room/source "rooms/cats.edn"}
-  {:room/title "Paw care"             :room/source "rooms/paw_care.edn"}
-  {:room/title "Puss in Boots sequel" :room/source "rooms/puss_in_boots.edn"}
-  {:room/title "Afterlife"            :room/source "rooms/afterlife.edn"}
-  {:user/name "Starry"             :user/avatar "avatars/a1.jpg"}
-  {:user/name "Friar Tuck"         :user/avatar "avatars/a2.jpg"}
-  {:user/name "Toom"               :user/avatar "avatars/a3.jpg"}
-  {:user/name "Hansel"             :user/avatar "avatars/a4.jpg"}
-  {:user/name "Cuddlebug"          :user/avatar "avatars/a5.jpg"}
-  {:user/name "Georgie"            :user/avatar "avatars/a6.jpg"}
-  {:user/name "Jean-Paul Gizmondo" :user/avatar "avatars/a7.jpg"}
-  {:user/name "Gorgeous Furboy"    :user/avatar "avatars/a8.jpg"}
-  {:user/name "Jiggle Belly"       :user/avatar "avatars/a9.jpg"}
-  {:user/name "Invitation"         :user/avatar "avatars/a10.jpg"}
-  {:user/name "The Phantom"        :user/avatar "avatars/a11.jpg"}
-  {:user/name "Rupert"             :user/avatar "avatars/a12.jpg"}
-  {:user/name "Obstinate"          :user/avatar "avatars/a13.jpg"}
-  {:user/name "Bunter"             :user/avatar "avatars/a14.jpg"}
-  {:user/name "Porsche"            :user/avatar "avatars/a15.jpg"}
-  {:user/name "Puka"               :user/avatar "avatars/a16.jpg"}
-  {:user/name "Tabba To"           :user/avatar "avatars/a17.jpg"}
-  {:user/name "Artful Dodger"      :user/avatar "avatars/a18.jpg"}
-  {:user/name "Half Hot Chocolate" :user/avatar "avatars/a19.jpg"}
-  {:user/name "Budmeister"         :user/avatar "avatars/a20.jpg"}
-  {:user/name "Scsi2"              :user/avatar "avatars/a21.jpg"}
-  {:user/name "BigMouth"           :user/avatar "avatars/a22.jpg"}
-  {:user/name "Splinter"           :user/avatar "avatars/a23.jpg"}
-  {:user/name "Isidor"             :user/avatar "avatars/a24.jpg"}
-  {:user/name "Chanel"             :user/avatar "avatars/a25.jpg"}
+  {:room/title "World domination"     :room/source "web/rooms/world_domination.edn"}
+  {:room/title "Pussies"              :room/source "web/rooms/pussies.edn"}
+  {:room/title "Internet of cats"     :room/source "web/rooms/cats.edn"}
+  {:room/title "Paw care"             :room/source "web/rooms/paw_care.edn"}
+  {:room/title "Puss in Boots sequel" :room/source "web/rooms/puss_in_boots.edn"}
+  {:room/title "Afterlife"            :room/source "web/rooms/afterlife.edn"}
+  {:user/name "Starry"             :user/avatar "web/avatars/a1.jpg"}
+  {:user/name "Friar Tuck"         :user/avatar "web/avatars/a2.jpg"}
+  {:user/name "Toom"               :user/avatar "web/avatars/a3.jpg"}
+  {:user/name "Hansel"             :user/avatar "web/avatars/a4.jpg"}
+  {:user/name "Cuddlebug"          :user/avatar "web/avatars/a5.jpg"}
+  {:user/name "Georgie"            :user/avatar "web/avatars/a6.jpg"}
+  {:user/name "Jean-Paul Gizmondo" :user/avatar "web/avatars/a7.jpg"}
+  {:user/name "Gorgeous Furboy"    :user/avatar "web/avatars/a8.jpg"}
+  {:user/name "Jiggle Belly"       :user/avatar "web/avatars/a9.jpg"}
+  {:user/name "Invitation"         :user/avatar "web/avatars/a10.jpg"}
+  {:user/name "The Phantom"        :user/avatar "web/avatars/a11.jpg"}
+  {:user/name "Rupert"             :user/avatar "web/avatars/a12.jpg"}
+  {:user/name "Obstinate"          :user/avatar "web/avatars/a13.jpg"}
+  {:user/name "Bunter"             :user/avatar "web/avatars/a14.jpg"}
+  {:user/name "Porsche"            :user/avatar "web/avatars/a15.jpg"}
+  {:user/name "Puka"               :user/avatar "web/avatars/a16.jpg"}
+  {:user/name "Tabba To"           :user/avatar "web/avatars/a17.jpg"}
+  {:user/name "Artful Dodger"      :user/avatar "web/avatars/a18.jpg"}
+  {:user/name "Half Hot Chocolate" :user/avatar "web/avatars/a19.jpg"}
+  {:user/name "Budmeister"         :user/avatar "web/avatars/a20.jpg"}
+  {:user/name "Scsi2"              :user/avatar "web/avatars/a21.jpg"}
+  {:user/name "BigMouth"           :user/avatar "web/avatars/a22.jpg"}
+  {:user/name "Splinter"           :user/avatar "web/avatars/a23.jpg"}
+  {:user/name "Isidor"             :user/avatar "web/avatars/a24.jpg"}
+  {:user/name "Chanel"             :user/avatar "web/avatars/a25.jpg"}
 ])
 
 ;; UTILS

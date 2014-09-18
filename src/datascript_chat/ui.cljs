@@ -32,7 +32,7 @@
 
 (r/defc avatar [user]
   [:.message__avatar
-    [:img {:src (:user/avatar user "avatars/loading.jpg")}]])
+    [:img {:src (:user/avatar user "web/avatars/loading.jpg")}]])
 
 (r/defc room [room last-msg unread event-bus]
   (let [user (:message/author last-msg)]
@@ -133,7 +133,7 @@
 
 ;; RENDER MACHINERY
 
-(def ^:dynamic *debug-render* false)
+(def ^:dynamic *debug-render* true)
 
 (def render-data (atom nil))
 

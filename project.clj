@@ -25,7 +25,7 @@
         :compiler {
           :externs  ["react/externs/react.js" "datascript/externs.js"]
           :preamble ["react/react.min.js"]
-          :output-to     "web/datascript-chat.min.js"
+          :output-to     "datascript-chat.min.js"
           :optimizations :advanced
           :pretty-print  false
         }}

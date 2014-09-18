@@ -83,7 +83,7 @@
 (defn- user-stub [uid]
   { :db/id       uid
     :user/name   "Loading..."
-    :user/avatar "avatars/loading.jpg"
+    :user/avatar "web/avatars/loading.jpg"
     :user/state :loading })
 
 (defn- load-user [uid]
