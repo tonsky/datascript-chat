@@ -9,32 +9,6 @@
     [goog.string]
     [goog.string.format] ))
 
-;; EMOJI decoder
-
-;; (defn re-ranges [s pattern]
-;;   (let [re (js/RegExp. pattern "g")]
-;;     (loop [acc []]
-;;       (if-let [match (.exec re s)]
-;;         (recur (conj acc {:match (nth match 0)
-;;                           :end   (.-lastIndex re)
-;;                           :start (- (.-lastIndex re) (count (nth match 0)))}))
-;;         acc))))
-
-;; (defn chars->utf32 [chars]
-;;   (let [leading  (.charCodeAt chars 0)
-;;         trailing (.charCodeAt chars 1)]
-;;     (->
-;;       (bit-or
-;;         (bit-shift-left (bit-and leading 1023) 10)
-;;         (bit-and trailing 1023))
-;;       (+ 65536)
-;;       (.toString 16))))
-
-;; (let [s "abc 🐶💕 def"
-;;       re #"[\uD800-\uDBFF][\uDC00-\uDFFF]"]
-;;   (str/replace s re #(str "https://abs.twimg.com/emoji/v1/72x72/" (chars->utf32 %) ".png")))
-
-
 ;; UTILS
 
 (defn- format-time [date]
@@ -61,17 +35,7 @@
     [:img {:src (:user/avatar user "avatars/loading.jpg")}]])
 
 (r/defc room [room last-msg unread event-bus]
-  (let [
-;;         last-msg (u/qe '[:find  (max ?m)
-;;                          :in    $ ?r
-;;                          :where [?m :message/room ?r]]
-;;                        db (:db/id room))
-;;         unread   (u/q1 '[:find (count ?m)
-;;                          :in   $ ?r
-;;                          :where [?m :message/room ?r]
-;;                                 [?m :message/unread]]
-;;                         db (:db/id room))
-        user     (:message/author last-msg)]
+  (let [user (:message/author last-msg)]
     [:.topic { :class    (when (:room/selected room) "topic_selected")
                :on-click (fn [_]
                            (select-room event-bus (:db/id room))
@@ -127,12 +91,16 @@
       (text (:message/text msg))]))
      
 (r/defc chat-pane [db]
-  (let [room (u/qe-by db :room/selected true)
-        msgs (->> (u/qes-by db :message/room (:db/id room))
+  (let [[room-id room-title]
+            (->> (d/q '[:find ?r ?t
+                        :where [?r :room/selected true]
+                               [?r :room/title ?t]] db)
+                    first)
+        msgs (->> (u/qes-by db :message/room room-id)
                   (sort-by :message/timestamp))]
     [:#chat__pane.pane
       [:#chat__header.header
-        [:.title (:room/title room "Loading...")]]
+        [:.title room-title]]
         (map message msgs)])
   :will-update (fn [node]
                  (r/remember :sticky? (should-scroll? node)))
@@ -163,24 +131,28 @@
     [:#chat  (chat-pane db)]
     (compose-pane db event-bus)])
 
+;; RENDER MACHINERY
 
+(def ^:dynamic *debug-render* false)
 
-(def render-queue (atom nil))
+(def render-data (atom nil))
 
 (defn request-rerender [db event-bus]
-  (reset! render-queue [db event-bus]))
+  (reset! render-data [db event-bus]))
 
 (defn- -render [db event-bus]
-  (let [key (str "Render (" (count (:eavt db)) " datoms)")]
-    (.time js/console key)
-    (r/render (window db event-bus) (.-body js/document))
-    (.timeEnd js/console key)))
+  (if *debug-render*
+    (let [key (str "Render (" (count (:eavt db)) " datoms)")]
+      (.time js/console key)
+      (r/render (window db event-bus) (.-body js/document))
+      (.timeEnd js/console key))
+    (r/render (window db event-bus) (.-body js/document))))
 
 (defn- render []
-  (when-let [args @render-queue]
+  (when-let [args @render-data]
     (apply -render args)
-    (reset! render-queue nil)))
+    (reset! render-data nil)))
 
-(add-watch render-queue :render (fn [_ _ old-val new-val]
+(add-watch render-data :render (fn [_ _ old-val new-val]
   (when (and (nil? old-val) new-val)
     (js/requestAnimationFrame render))))

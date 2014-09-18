@@ -12,6 +12,7 @@ html, textarea, button {
 
 html {
   background: url(i/bg.jpg);
+/*   background: hsl(215, 50%, 55%); */
   background-size: cover;
 }
 

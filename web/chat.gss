@@ -3,9 +3,9 @@
 #window[center-y] == ::window[center-y];
 
 #rooms[left] == #window[left];
-#rooms[width] == 310;
+#rooms[width] == 350;
 
-#chat[width] == 510;
+#chat[width] == 550;
 #chat[left]   == #rooms[right];
 #chat[right]  == #window[right];
 #chat[top]    == #window[top];

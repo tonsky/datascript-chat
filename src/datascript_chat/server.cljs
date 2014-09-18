@@ -47,7 +47,7 @@
 
 ;; UTILS
 
-(defn ajax [url callback]
+(defn- ajax [url callback]
   (.send goog.net.XhrIo url
     (fn [reply]
       (-> (.-target reply)
@@ -55,27 +55,32 @@
           (cljs.reader/read-string)
           (callback)))))
 
-(defn rand-n [min max]
+(defn- rand-n [min max]
   (+ min (rand-int (- max min))))
 
-(defn rand-pred [pred f]
+(defn- rand-pred [pred f]
   (let [x (f)]
     (if (pred x) x (recur pred f))))
 
-(defn later [f]
+(defn- later [f]
   (js/setTimeout f (rand-n 1000 2000)))
-
-(defn call [f args callback]
-  (later #(callback (apply f args))))
 
 ;; FIXTURES
 
-(def conn (d/create-conn {:room/messages {:db/cardinality :db.cardinality/many}}))
+(def conn (d/create-conn {
+  :room/messages {:db/cardinality :db.cardinality/many}
+}))
+
+;; pre-populate rooms list and user names
 (d/transact! conn fixtures)
 
-(doseq [[id url] (u/-q '[:find ?id ?src :where [?id :room/source ?src]] @conn)]
+;; load all room messages variants
+(doseq [[id url title] (u/-q '[:find ?id ?src ?title
+                               :where [?id :room/source ?src]
+                                      [?id :room/title ?title]] @conn)]
   (ajax url
     (fn [msgs]
+      (println "Loaded messages for room" id title url)
       (d/transact! conn [ {:db/id id
                            :room/messages msgs} ]))))
 
@@ -86,27 +91,45 @@
           :where [?id :user/name]]
         db))
 
-(defn- rand-message [db]
-  (-> (d/datoms db :aevt :room/messages) (rand-nth) ((juxt :e :v))))
+(defn- rand-room [db]
+  (u/q1 '[:find  (rand ?id)
+          :where [?id :room/title]]
+        db))
 
-;; "REST" API
+(defn- rand-message [db room-id]
+  (-> (d/datoms db :aevt :room/messages room-id) (rand-nth) :v))
 
-(def me (atom nil))
-
-(defn get-rooms []
-  (->> @conn
-    (u/-q '[:find ?id ?title
-           :where [?id :room/title ?title]])
-    (mapv #(zipmap [:db/id :room/title] %))))
+;; HELPERS
 
 (defn- user-by-id [db id]
   (-> (d/entity db id)
       (select-keys [:db/id :user/name :user/avatar])))
 
-(defn get-user [id]
+;; "REST" API
+
+(def ^:private me (atom nil))
+
+(defn call
+  "Used to emulate async server calls"
+  [f args callback]
+  (later #(callback (apply f args))))
+
+(defn get-rooms
+  "Return list of rooms"
+  []
+  (->> @conn
+    (u/-q '[:find ?id ?title
+           :where [?id :room/title ?title]])
+    (mapv #(zipmap [:db/id :room/title] %))))
+
+(defn get-user
+  "Return specific user entity"
+  [id]
   (user-by-id @conn id))
 
-(defn whoami []
+(defn whoami
+  "Return current user entity"
+  []
   (let [db @conn
         id (or @me (reset! me (rand-user-id db)))]
     (user-by-id db id)))
@@ -114,10 +137,12 @@
 
 ;; MESSAGING
 
-(def next-msg-id (atom 10000))
-(def msgs-chan (async/chan))
+(def ^:private next-msg-id (atom 10000))
+(def ^:private msgs-chan (async/chan))
 
-(defn send [msg]
+(defn send
+  "Send message to server"
+  [msg]
   (async/put! msgs-chan
     (assoc msg
       :db/id (swap! next-msg-id inc)
@@ -126,7 +151,8 @@
 (go-loop []
   (<! (async/timeout (rand-n 500 1500)))
   (let [db @conn
-        [room-id text] (rand-message db)
+        room-id   (rand-room db)
+        text      (rand-message db room-id)
         author-id (rand-pred #(not= % @me) #(rand-user-id db))
         msg     { :db/id             (swap! next-msg-id inc)
                   :message/text      text
@@ -138,7 +164,9 @@
       (>! msgs-chan msg)))
   (recur))
 
-(defn subscribe [on-msg]
+(defn subscribe
+  "Subscribe for server messages push"
+  [on-msg]
   (go-loop []
     (let [msg (<! msgs-chan)]
       (on-msg msg))
