@@ -11,11 +11,18 @@
   (let [react-component
         (.createClass js/React
            #js {:getInitialState (fn [] (atom {}))
+                :shouldComponentUpdate
+                (fn [next-props _]
+                  (this-as this
+                           (not= (aget (.-props this) "value")
+                                 (aget next-props "value"))))
                 :render
                 (fn []
                   (this-as this
                     (binding [*component* this]
-                      (apply renderer (aget (.-props this) "args")))))
+                      (apply renderer
+                             (aget (.-props this) "value")
+                             (aget (.-props this) "statics")))))
                 :componentWillUpdate
                 (fn [_ _]
                   (when will-update
@@ -29,8 +36,8 @@
                       (binding [*component* this]
                         (did-update (node))))))
                 })]
-    (fn [& args]
-      (react-component #js {:args args}))))
+    (fn [value & statics]
+      (react-component #js {:value value :statics statics}))))
 
 (defn render [component node]
   (.renderComponent js/React component node))
