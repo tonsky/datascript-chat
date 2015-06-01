@@ -4,8 +4,7 @@
     [cljs.core.async :as async]
     [datascript :as d]
     [datascript-chat.util :as u]
-    [datascript-chat.react :as r :include-macros true]
-    [sablono.core :as s]
+    [rum :include-macros true]
     [goog.string]
     [goog.string.format] ))
 
@@ -30,11 +29,11 @@
 
 ;; UI COMPONENTS
 
-(r/defc avatar [user]
+(rum/defc avatar [user]
   [:.message__avatar
     [:img {:src (:user/avatar user "web/avatars/loading.jpg")}]])
 
-(r/defc room [room last-msg unread event-bus]
+(rum/defc room [room last-msg unread event-bus]
   (let [user (:message/author last-msg)]
     [:.topic { :class    (when (:room/selected room) "topic_selected")
                :on-click (fn [_]
@@ -54,7 +53,7 @@
             ])
         [:.topic__title (:room/title room)])]))
 
-(r/defc rooms-pane [db event-bus]
+(rum/defc rooms-pane [db event-bus]
   (let [rooms         (->> (u/qes-by db :room/title)
                            (sort-by :room/title))
         last-msgs     (u/qmap '[:find  ?r (max ?m)
@@ -75,11 +74,11 @@
                     event-bus))
            rooms)]))
 
-(r/defc text [text]
+(rum/defc text < rum/static [text]
   [:.message__text
     (map #(vector :p %) (str/split-lines text))])
 
-(r/defc message [msg]
+(rum/defc message [msg]
   (let [user (:message/author msg)]
     [:.message {:key   (:db/id msg)
                 :class [(when (:message/unread msg) "message_unread")
@@ -91,23 +90,28 @@
           (format-time (:message/timestamp msg))]]
       (text (:message/text msg))]))
      
-(r/defc chat-pane [db]
-  (let [[room-id room-title]
-            (->> (d/q '[:find ?r ?t
-                        :where [?r :room/selected true]
-                               [?r :room/title ?t]] db)
-                    first)
+(def sticky-mixin
+  { :will-update
+    (fn [state]
+      (let [node (.getDOMNode (:rum/react-component state))]
+        (assoc state ::sticky? (should-scroll? node))))
+    :did-update
+    (fn [state]
+      (when (::sticky? state)
+        (let [node (.getDOMNode (:rum/react-component state))]
+          (set! (.-scrollTop node) (.-scrollHeight node))))
+      state) })
+     
+(rum/defc chat-pane < sticky-mixin [db]
+  (let [[room-id room-title] (d/q '[:find [?r ?t]
+                                    :where [?r :room/selected true]
+                                           [?r :room/title ?t]] db)
         msgs (->> (u/qes-by db :message/room room-id)
                   (sort-by :message/timestamp))]
     [:#chat__pane.pane
       [:#chat__header.header
         [:.title room-title]]
-        (map message msgs)])
-  :will-update (fn [node]
-                 (r/remember :sticky? (should-scroll? node)))
-  :did-update  (fn [node]
-                 (when (r/recall :sticky?)
-                   (set! (.-scrollTop node) (.-scrollHeight node)))))
+        (map message msgs)]))
 
 (defn- textarea-keydown [callback]
   (fn [e]
@@ -118,7 +122,7 @@
         (set! (.. e -target -value) "")
         (.preventDefault e)))))
 
-(r/defc compose-pane [db event-bus]
+(rum/defc compose-pane [db event-bus]
   [:#compose
     (avatar (u/qe-by db :user/me true))
     [:textarea#compose__area.message__text
@@ -126,34 +130,14 @@
         :auto-focus  true
         :on-key-down  (textarea-keydown #(send-msg event-bus %)) }]])
 
-(r/defc window [db event-bus]
-  [:#window
-    [:#rooms (rooms-pane db event-bus)]
-    [:#chat  (chat-pane db)]
-    (compose-pane db event-bus)])
+(rum/defc window < rum/reactive [conn event-bus]
+  (let [db (rum/react conn)]
+    [:#window
+      [:#rooms (rooms-pane db event-bus)]
+      [:#chat  (chat-pane db)]
+      (compose-pane db event-bus)]))
 
 ;; RENDER MACHINERY
 
-(def ^:dynamic *debug-render* true)
-
-(def render-data (atom nil))
-
-(defn request-rerender [db event-bus]
-  (reset! render-data [db event-bus]))
-
-(defn- -render [db event-bus]
-  (if *debug-render*
-    (let [key (str "Render (" (count (:eavt db)) " datoms)")]
-      (.time js/console key)
-      (r/render (window db event-bus) (.-body js/document))
-      (.timeEnd js/console key))
-    (r/render (window db event-bus) (.-body js/document))))
-
-(defn- render []
-  (when-let [args @render-data]
-    (apply -render args)
-    (reset! render-data nil)))
-
-(add-watch render-data :render (fn [_ _ old-val new-val]
-  (when (and (nil? old-val) new-val)
-    (js/requestAnimationFrame render))))
+(defn mount [conn event-bus]
+  (rum/mount (window conn event-bus) js/document.body))

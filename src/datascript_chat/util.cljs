@@ -15,22 +15,12 @@
       res)
     (apply d/q q args)))
 
-(defn q1
-  "Return first element of first tuple of result"
-  [q & args]
-  (->> (apply -q q args) ffirst))
-
 (defn q1-by
   "Return single entity id by attribute existence or attribute value"
   ([db attr]
     (->> (-q '[:find ?e :in $ ?a :where [?e ?a]] db attr) ffirst))
   ([db attr value]
     (->> (-q '[:find ?e :in $ ?a ?v :where [?e ?a ?v]] db attr value) ffirst)))
-
-(defn q1s
-  "Return seq of first elements of each tuple"
-  [q & args]
-  (->> (apply -q q args) (map first)))
 
 (defn qe
   "If queried entity id, return single entity of first result"

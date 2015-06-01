@@ -39,13 +39,7 @@
 ;; ON PAGE LOAD
 
 (defn ^:export start []
-  ;; initial render
-  (ui/request-rerender @conn event-bus)
-  
-  ;; re-render on each DB change
-  (d/listen! conn
-    (fn [tx-report]
-      (ui/request-rerender (:db-after tx-report) event-bus)))
+  (ui/mount conn event-bus)
   
   ;; initial rooms list population
   (server/call server/get-rooms []
@@ -104,13 +98,16 @@
       (if (contains? loaded-users uid)
         (recur loaded-users)
         (do
-          (when-not (u/q1 '[:find ?e :in $ ?e :where [?e :user/state :loaded]] @conn uid)
+          (when-not (d/q '[:find ?e .
+                           :in $ ?e
+                           :where [?e :user/state :loaded]] @conn uid)
             (d/transact! conn [(user-stub uid)])
             (load-user uid))
           (recur (conj loaded-users uid)))))))
 
 (defn- select-room [db room-id]
-  (let [selected (u/q1 '[:find ?r :where [?r :room/selected true]] db)]
+  (let [selected (d/q '[:find ?r .
+                        :where [?r :room/selected true]] db)]
     (case selected
       nil
         [[:db/add room-id :room/selected true]]
@@ -127,11 +124,11 @@
 
 
 (defn- mark-read [db room-id]
-  (let [unread (u/q1s '[:find ?m
-                        :in $ ?r
-                        :where [?m :message/unread]
-                               [?m :message/room ?r]]
-                      db room-id)]
+  (let [unread (d/q '[:find [?m ...]
+                      :in $ ?r
+                      :where [?m :message/unread]
+                      [?m :message/room ?r]]
+                    db room-id)]
     (map (fn [mid] [:db/retract mid :message/unread true]) unread)))
 
 ;; when room is selected, mark all messages as read
@@ -146,20 +143,20 @@
   (let [db @conn
         room-id     (:message/room msg)
         ;; Last ?lim messages
-        keep-msgs   (->> (u/q1 '[:find (max ?lim ?m)
-                                 :in $ ?room-id ?lim
-                                 :where [?m :message/room ?room-id]]
-                               db
-                               room-id
-                               *room-msg-limit*)
+        keep-msgs   (->> (d/q '[:find (max ?lim ?m) .
+                                :in $ ?room-id ?lim
+                                :where [?m :message/room ?room-id]]
+                              db
+                              room-id
+                              *room-msg-limit*)
                          set)
         ;; All other messages in same room
-        remove-msgs (u/q1s '[:find ?m
-                             :in $ ?room-id ?remove-pred 
-                             :where [?m :message/room ?room-id]
-                                    [(?remove-pred ?m)]] ;; filter by custom predicate
-                             db
-                             room-id
-                             #(not (contains? keep-msgs %)))]
+        remove-msgs (d/q '[:find [?m ...]
+                           :in $ ?room-id ?remove-pred 
+                           :where [?m :message/room ?room-id]
+                           [(?remove-pred ?m)]] ;; filter by custom predicate
+                         db
+                         room-id
+                         #(not (contains? keep-msgs %)))]
     (d/transact! conn
       (map #(vector :db.fn/retractEntity %) remove-msgs))))

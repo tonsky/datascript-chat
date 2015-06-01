@@ -87,14 +87,14 @@
 ;; GENERATORS
 
 (defn- rand-user-id [db]
-  (u/q1 '[:find  (rand ?id)
-          :where [?id :user/name]]
-        db))
+  (d/q '[:find  (rand ?id) .
+         :where [?id :user/name]]
+       db))
 
 (defn- rand-room [db]
-  (u/q1 '[:find  (rand ?id)
-          :where [?id :room/title]]
-        db))
+  (d/q '[:find  (rand ?id) .
+         :where [?id :room/title]]
+       db))
 
 (defn- rand-message [db room-id]
   (-> (d/datoms db :aevt :room/messages room-id) (rand-nth) :v))
@@ -119,7 +119,7 @@
   []
   (->> @conn
     (u/-q '[:find ?id ?title
-           :where [?id :room/title ?title]])
+            :where [?id :room/title ?title]])
     (mapv #(zipmap [:db/id :room/title] %))))
 
 (defn get-user
