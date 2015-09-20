@@ -1,3 +1,37 @@
+
+@font-face{
+    font-family: 'Fira Sans';
+    src: url('//code.cdn.mozilla.net/fonts/eot/FiraSans-Light.eot');
+    src: local('Fira Sans Light'),
+         url('//code.cdn.mozilla.net/fonts/eot/FiraSans-Light.eot') format('embedded-opentype'),
+         url('//code.cdn.mozilla.net/fonts/woff/FiraSans-Light.woff') format('woff'),
+         url('//code.cdn.mozilla.net/fonts/ttf/FiraSans-Light.ttf') format('truetype');
+    font-weight: 300;
+    font-style: normal;
+}
+
+@font-face{
+    font-family: 'Fira Sans';
+    src: url('//code.cdn.mozilla.net/fonts/eot/FiraSans-Regular.eot');
+    src: local('Fira Sans Regular'),
+         url('//code.cdn.mozilla.net/fonts/eot/FiraSans-Regular.eot') format('embedded-opentype'),
+         url('//code.cdn.mozilla.net/fonts/woff/FiraSans-Regular.woff') format('woff'),
+         url('//code.cdn.mozilla.net/fonts/ttf/FiraSans-Regular.ttf') format('truetype');
+    font-weight: 400;
+    font-style: normal;
+}
+
+@font-face{
+    font-family: 'Fira Sans';
+    src: url('//code.cdn.mozilla.net/fonts/eot/FiraSans-Medium.eot');
+    src: local('Fira Sans Medium'),
+         url('//code.cdn.mozilla.net/fonts/eot/FiraSans-Medium.eot') format('embedded-opentype'),
+         url('//code.cdn.mozilla.net/fonts/woff/FiraSans-Medium.woff') format('woff'),
+         url('//code.cdn.mozilla.net/fonts/ttf/FiraSans-Medium.ttf') format('truetype');
+    font-weight: 500;
+    font-style: normal;
+}
+
 * {
   box-sizing: border-box;
   -moz-box-sizing: border-box;
@@ -7,7 +41,7 @@
 
 
 html, textarea, button {
-  font: 13px/20px 'Fira Sans OT', sans-serif;
+  font: 13px/20px 'Fira Sans', sans-serif;
 }
 
 html {
@@ -48,7 +82,7 @@ html {
 .title {
   color: #db6b9a;
   font-size: 20px;
-  font-weight: 100;
+  font-weight: 300;
   line-height: 57px;
   padding-left: 15px;
 }
@@ -86,7 +120,7 @@ html {
   border-radius: 4px;
   padding: 1px 4px 0;
   display: inline-block;
-  line-height: 14px;
+  line-height: 15px;
   font-weight: 400;
   font-size: 11px;
 }
@@ -121,7 +155,7 @@ html {
 .message__ts {
   color: #bbb;
   font-size: 11px;
-  font-weight: normal;
+  font-weight: 400;
   margin: 0 0 0 6px;
 }
 .message__text > p {
