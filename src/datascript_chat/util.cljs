@@ -1,6 +1,6 @@
 (ns datascript-chat.util
   (:require
-    [datascript :as d]))
+    [datascript.core :as d]))
 
 ;; DATASCRIPT
 

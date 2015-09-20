@@ -2,7 +2,7 @@
   (:require
     [clojure.string :as str]
     [cljs.core.async :as async]
-    [datascript :as d]
+    [datascript.core :as d]
     [datascript-chat.server :as server]
     [datascript-chat.ui :as ui]
     [datascript-chat.util :as u])

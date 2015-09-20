@@ -2,9 +2,9 @@
   (:require
     [clojure.string :as str]
     [cljs.core.async :as async]
-    [datascript :as d]
+    [datascript.core :as d]
     [datascript-chat.util :as u]
-    [rum :include-macros true]
+    [rum.core :as rum]
     [goog.string]
     [goog.string.format] ))
 

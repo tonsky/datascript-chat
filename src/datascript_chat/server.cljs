@@ -2,7 +2,7 @@
   (:require
     [cljs.reader]
     [cljs.core.async :as async]
-    [datascript :as d]
+    [datascript.core :as d]
     [datascript-chat.util :as u])
   (:import
     [goog.net XhrIo])
