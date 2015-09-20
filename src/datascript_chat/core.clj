@@ -1,4 +1,4 @@
-(ns datascript-chat
+(ns datascript-chat.core
   (:require
     [cljs.core.async.macros :refer [go-loop]]))
 

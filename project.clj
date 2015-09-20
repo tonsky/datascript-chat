@@ -14,21 +14,19 @@
       { :id "none"
         :source-paths ["src"]
         :compiler {
-          :main          datascript-chat
+          :main          datascript-chat.core
           :output-to     "target/datascript-chat.js"
           :output-dir    "target/none"
           :optimizations :none
           :source-map    true
-          :warnings      {:single-segment-namespace false}
         }}
       { :id "advanced"
         :source-paths ["src"]
         :compiler {
-          :main          datascript-chat
+          :main          datascript-chat.core
           :output-to     "target/datascript-chat.js"
           :optimizations :advanced
           :pretty-print  false
-          :warnings      {:single-segment-namespace false}
         }}
   ]}
 )
